@@ -31,8 +31,9 @@ dinoGet.done(function(data) {
     dissipating: false
   });
   for (var i in dinoData){
+    var icon = 'https://paleobiodb.org/data1.2/taxa/icon.png?id=' + dinoData[i].img;
     var marker = new google.maps.Marker({
-      position: new google.maps.LatLng(dinoData[i].lat, dinoData[i].lng)});
+      position: new google.maps.LatLng(dinoData[i].lat, dinoData[i].lng), icon: icon });
       markers.push(marker);
   }
   updateMarkers();
