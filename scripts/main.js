@@ -1,4 +1,4 @@
-var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&show=img,coords');
+var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords');
 var mapStyle = $.get('./mapstyles.json');
 var heatMapData = [];
 var dinoData;
@@ -19,10 +19,13 @@ mapStyle.done(function(style){
 });
 
 dinoGet.done(function(data) {
+  console.log(data);
   dinoData = data.records;
   formatHeatMap(dinoData);
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: heatMapData
+    data: heatMapData,
+    radius: 15,
+    maxIntensity: 45
   });
   for (var i in dinoData){
     var marker = new google.maps.Marker({
@@ -42,7 +45,7 @@ function formatHeatMap(data) {
 }
 
 function updateMarkers(zoom) {
-  if (!zoom || zoom < 5) {
+  if (!zoom || zoom < 4) {
       heatmap.setMap(map);
       for (var i in markers)
         markers[i].setMap(null);
