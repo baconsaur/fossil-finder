@@ -24,8 +24,11 @@ dinoGet.done(function(data) {
   formatHeatMap(dinoData);
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: heatMapData,
-    radius: 15,
-    maxIntensity: 45
+    // radius: 15,
+    // maxIntensity: 45,
+    radius: 3,
+    maxIntensity: 25,
+    dissipating: false
   });
   for (var i in dinoData){
     var marker = new google.maps.Marker({
