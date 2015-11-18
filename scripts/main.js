@@ -23,8 +23,15 @@ mapStyle.done(function(style){
   map.setOptions({styles: style});
 });
 
-$(input).on('click', function(){
+$(input).on('focus', function(){
   $(this).val('');
+});
+
+$(input).on('keyup', function(){
+  $('.dino-result').remove();
+  var inputText = $(this).val();
+  if (inputText.length>0)
+    dinoMatch(inputText);
 });
 
 dinoGet.done(function(data) {
@@ -96,4 +103,28 @@ function checkBounds() {
           markers[i].setMap(map);
       else
         markers[i].setMap(null);
+}
+
+function dinoMatch(inputText) {
+  var dinoResults = [];
+  for (var i in dinoData){
+    if (dinoData[i].tna.toLowerCase().slice(0, inputText.length).match(inputText)){
+      var newHtml = '<img src="https://paleobiodb.org/data1.2/taxa/icon.png?id=' + dinoData[i].img + '"><span class="pac-item-query">' + dinoData[i].tna + '</span>';
+      if (dinoResults.indexOf(newHtml) === -1)
+        dinoResults.push(newHtml);
+    }
+  }
+  for (var j=0;j<2;j++){
+    if(dinoResults[j])
+      $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
+  }
+  $('.dino-result').on('mousedown', function(event) {
+    var dinoText = event.target.innerText;
+    $(input).val(dinoText);
+    dinoSelect(dinoText);
+  });
+}
+
+function dinoSelect(dino) {
+  console.log(dino);
 }
