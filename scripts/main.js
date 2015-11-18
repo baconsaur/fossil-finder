@@ -6,6 +6,7 @@ var dinoData;
 var heatMap;
 var markers = [];
 var infoWindows = [];
+var selectedDino;
 var map = new google.maps.Map($('#map')[0], {
   center: {lat: 0, lng: 0},
   zoom: 2,
@@ -25,6 +26,8 @@ mapStyle.done(function(style){
 
 $(input).on('focus', function(){
   $(this).val('');
+  selectedDino = '';
+  updateMarkers();
 });
 
 $(input).on('keyup', function(){
@@ -51,7 +54,7 @@ dinoGet.done(function(data) {
 });
 
 map.addListener('bounds_changed', function() {
-  updateMarkers(map.getZoom());
+  updateMarkers();
 });
 
 searchBox.addListener('places_changed', function() {
@@ -85,11 +88,12 @@ function addMarker(dinoData, i) {
   infoWindows.push(info);
 }
 
-function updateMarkers(zoom) {
-  if (!zoom || zoom < 4) {
+function updateMarkers() {
+  if (!checkZoom()) {
       heatmap.setMap(map);
-      for (var i in markers)
-        markers[i].setMap(null);
+      if(!selectedDino)
+        for (var i in markers)
+          markers[i].setMap(null);
   } else {
     heatmap.setMap(null);
     checkBounds();
@@ -98,11 +102,12 @@ function updateMarkers(zoom) {
 
 function checkBounds() {
     var newbounds = map.getBounds();
-    for (var i in markers)
-      if (newbounds.contains(markers[i].position))
+    if(!selectedDino)
+      for (var i in markers)
+        if (newbounds.contains(markers[i].position))
           markers[i].setMap(map);
-      else
-        markers[i].setMap(null);
+        else
+          markers[i].setMap(null);
 }
 
 function dinoMatch(inputText) {
@@ -119,12 +124,33 @@ function dinoMatch(inputText) {
       $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
   }
   $('.dino-result').on('mousedown', function(event) {
-    var dinoText = event.target.innerText;
-    $(input).val(dinoText);
-    dinoSelect(dinoText);
+    selectedDino = event.target.innerText;
+    $(input).val(selectedDino);
+    dinoSelect();
   });
 }
 
-function dinoSelect(dino) {
-  console.log(dino);
+function dinoSelect() {
+  var visibleMarker = false;
+  var bounds = map.getBounds();
+  for (var i in dinoData) {
+    if(!selectedDino || dinoData[i].tna === selectedDino){
+      markers[i].setMap(map);
+      if (bounds.contains(markers[i].position))
+        visibleMarker = true;
+    } else
+      markers[i].setMap(null);
+  }
+  if(!visibleMarker){
+    map.setZoom(2);
+    map.setCenter(new google.maps.LatLng(0,0));
+  }
+}
+
+function checkZoom() {
+  if(map.getZoom() < 4)
+    return false;
+  else {
+    return true;
+  }
 }
