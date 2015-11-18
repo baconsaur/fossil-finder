@@ -1,18 +1,23 @@
 var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords');
 var mapStyle = $.get('./mapstyles.json');
+var input = $('#search')[0];
 var heatMapData = [];
 var dinoData;
 var heatMap;
 var markers = [];
-var map = new google.maps.Map(document.getElementById('map'), {
+var infoWindows = [];
+var map = new google.maps.Map($('#map')[0], {
   center: {lat: 0, lng: 0},
   zoom: 2,
   mapTypeControl: false,
   streetViewControl: false,
   rotateControl: false,
   minZoom: 2,
-  maxZoom: 10
+  maxZoom: 8
 });
+
+var searchBox = new google.maps.places.SearchBox(input);
+map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
 
 mapStyle.done(function(style){
   map.setOptions({styles: style});
@@ -24,17 +29,12 @@ dinoGet.done(function(data) {
   formatHeatMap(dinoData);
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: heatMapData,
-    // radius: 15,
-    // maxIntensity: 45,
     radius: 3,
     maxIntensity: 25,
     dissipating: false
   });
   for (var i in dinoData){
-    var icon = 'https://paleobiodb.org/data1.2/taxa/icon.png?id=' + dinoData[i].img;
-    var marker = new google.maps.Marker({
-      position: new google.maps.LatLng(dinoData[i].lat, dinoData[i].lng), icon: icon });
-      markers.push(marker);
+    addMarker(dinoData, i);
   }
   updateMarkers();
 });
@@ -43,9 +43,35 @@ map.addListener('bounds_changed', function() {
   updateMarkers(map.getZoom());
 });
 
+searchBox.addListener('places_changed', function() {
+    var places = searchBox.getPlaces();
+    var bounds = new google.maps.LatLngBounds();
+    places.forEach(function(place) {
+      bounds.extend(place.geometry.location);
+      map.fitBounds(bounds);
+    });
+});
+
 function formatHeatMap(data) {
   for (var i in data)
     heatMapData.push(new google.maps.LatLng(data[i].lat, data[i].lng));
+}
+
+function addMarker(dinoData, i) {
+  var icon = 'https://paleobiodb.org/data1.2/taxa/icon.png?id=' + dinoData[i].img;
+  var marker = new google.maps.Marker({
+    position: new google.maps.LatLng(dinoData[i].lat, dinoData[i].lng), icon: icon });
+
+    google.maps.event.addListener(marker, 'click', function() {
+      for (var j in infoWindows)
+        infoWindows[j].close();
+      infoWindows[i].open(map, marker);
+    });
+
+  markers.push(marker);
+  var info = new google.maps.InfoWindow({
+    content: dinoData[i].tna });
+  infoWindows.push(info);
 }
 
 function updateMarkers(zoom) {
