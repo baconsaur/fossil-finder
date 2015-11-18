@@ -16,11 +16,15 @@ var map = new google.maps.Map($('#map')[0], {
   maxZoom: 8
 });
 
-var searchBox = new google.maps.places.SearchBox(input);
-map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+var searchBox = new google.maps.places.SearchBox(input, {types: ['(regions)']});
+map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
 
 mapStyle.done(function(style){
   map.setOptions({styles: style});
+});
+
+$(input).on('click', function(){
+  $(this).val('');
 });
 
 dinoGet.done(function(data) {
