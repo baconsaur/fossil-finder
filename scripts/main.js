@@ -1,4 +1,4 @@
-var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords');
+var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords,class,ecospace,methods');
 var mapStyle = $.get('./mapstyles.json');
 var input = $('#search')[0];
 var heatMapData = [];
@@ -84,7 +84,7 @@ function addMarker(dinoData, i) {
 
   markers.push(marker);
   var info = new google.maps.InfoWindow({
-    content: dinoData[i].tna });
+    content: writeInfo(dinoData[i]) });
   infoWindows.push(info);
 }
 
@@ -153,4 +153,27 @@ function checkZoom() {
   else {
     return true;
   }
+}
+
+function writeInfo(dinosaur) {
+  var age = dinosaur.oei.split(' ');
+  var museumText = '';
+  if (dinosaur.ccu)
+    museumText = "</li><li>Museum: " + dinosaur.ccu;
+  if (dinosaur.fml)
+    familyText = "</li><li>Family: " + dinosaur.fml;
+  if (age.length > 1)
+    age = age[1];
+  else
+    age = age[0];
+  var infoString = '<div class="info-text"><h1>' +
+dinosaur.tna + '</h1> <img src="https://paleobiodb.org/data1.2/taxa/thumb.png?id=' + dinosaur.img + '">' +
+'<ul><li>Class: ' + dinosaur.cll +
+familyText +
+'</li></li>Age: <a href="https://en.wikipedia.org/wiki/' + age + '" target="_blank">' + dinosaur.oei + '</a>' +
+'</li><li>Diet: ' + dinosaur.jdt +
+museumText +
+'</li></ul></div>';
+
+  return infoString;
 }
