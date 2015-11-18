@@ -1,4 +1,4 @@
-var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords');
+var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords,class,ecospace,methods');
 var mapStyle = $.get('./mapstyles.json');
 var input = $('#search')[0];
 var heatMapData = [];
@@ -6,6 +6,7 @@ var dinoData;
 var heatMap;
 var markers = [];
 var infoWindows = [];
+var selectedDino;
 var map = new google.maps.Map($('#map')[0], {
   center: {lat: 0, lng: 0},
   zoom: 2,
@@ -16,11 +17,24 @@ var map = new google.maps.Map($('#map')[0], {
   maxZoom: 8
 });
 
-var searchBox = new google.maps.places.SearchBox(input);
-map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+var searchBox = new google.maps.places.SearchBox(input, {types: ['(regions)']});
+map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
 
 mapStyle.done(function(style){
   map.setOptions({styles: style});
+});
+
+$(input).on('focus', function(){
+  $(this).val('');
+  selectedDino = '';
+  updateMarkers();
+});
+
+$(input).on('keyup', function(){
+  $('.dino-result').remove();
+  var inputText = $(this).val();
+  if (inputText.length>0)
+    dinoMatch(inputText);
 });
 
 dinoGet.done(function(data) {
@@ -40,7 +54,7 @@ dinoGet.done(function(data) {
 });
 
 map.addListener('bounds_changed', function() {
-  updateMarkers(map.getZoom());
+  updateMarkers();
 });
 
 searchBox.addListener('places_changed', function() {
@@ -70,15 +84,16 @@ function addMarker(dinoData, i) {
 
   markers.push(marker);
   var info = new google.maps.InfoWindow({
-    content: dinoData[i].tna });
+    content: writeInfo(dinoData[i]) });
   infoWindows.push(info);
 }
 
-function updateMarkers(zoom) {
-  if (!zoom || zoom < 4) {
+function updateMarkers() {
+  if (!checkZoom()) {
       heatmap.setMap(map);
-      for (var i in markers)
-        markers[i].setMap(null);
+      if(!selectedDino)
+        for (var i in markers)
+          markers[i].setMap(null);
   } else {
     heatmap.setMap(null);
     checkBounds();
@@ -87,9 +102,78 @@ function updateMarkers(zoom) {
 
 function checkBounds() {
     var newbounds = map.getBounds();
-    for (var i in markers)
-      if (newbounds.contains(markers[i].position))
+    if(!selectedDino)
+      for (var i in markers)
+        if (newbounds.contains(markers[i].position))
           markers[i].setMap(map);
-      else
-        markers[i].setMap(null);
+        else
+          markers[i].setMap(null);
+}
+
+function dinoMatch(inputText) {
+  var dinoResults = [];
+  for (var i in dinoData){
+    if (dinoData[i].tna.toLowerCase().slice(0, inputText.length).match(inputText)){
+      var newHtml = '<img src="https://paleobiodb.org/data1.2/taxa/icon.png?id=' + dinoData[i].img + '"><span class="pac-item-query">' + dinoData[i].tna + '</span>';
+      if (dinoResults.indexOf(newHtml) === -1)
+        dinoResults.push(newHtml);
+    }
+  }
+  for (var j=0;j<2;j++){
+    if(dinoResults[j])
+      $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
+  }
+  $('.dino-result').on('mousedown', function(event) {
+    selectedDino = event.target.innerText;
+    $(input).val(selectedDino);
+    dinoSelect();
+  });
+}
+
+function dinoSelect() {
+  var visibleMarker = false;
+  var bounds = map.getBounds();
+  for (var i in dinoData) {
+    if(!selectedDino || dinoData[i].tna === selectedDino){
+      markers[i].setMap(map);
+      if (bounds.contains(markers[i].position))
+        visibleMarker = true;
+    } else
+      markers[i].setMap(null);
+  }
+  if(!visibleMarker){
+    map.setZoom(2);
+    map.setCenter(new google.maps.LatLng(0,0));
+  }
+}
+
+function checkZoom() {
+  if(map.getZoom() < 4)
+    return false;
+  else {
+    return true;
+  }
+}
+
+function writeInfo(dinosaur) {
+  var age = dinosaur.oei.split(' ');
+  var museumText = '';
+  if (dinosaur.ccu)
+    museumText = "</li><li>Museum: " + dinosaur.ccu;
+  if (dinosaur.fml)
+    familyText = "</li><li>Family: " + dinosaur.fml;
+  if (age.length > 1)
+    age = age[1];
+  else
+    age = age[0];
+  var infoString = '<div class="info-text"><h1>' +
+dinosaur.tna + '</h1> <img src="https://paleobiodb.org/data1.2/taxa/thumb.png?id=' + dinosaur.img + '">' +
+'<ul><li>Class: ' + dinosaur.cll +
+familyText +
+'</li></li>Age: <a href="https://en.wikipedia.org/wiki/' + age + '" target="_blank">' + dinosaur.oei + '</a>' +
+'</li><li>Diet: ' + dinosaur.jdt +
+museumText +
+'</li></ul></div>';
+
+  return infoString;
 }
