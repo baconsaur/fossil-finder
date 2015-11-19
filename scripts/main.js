@@ -6,7 +6,7 @@ var dinoData;
 var heatMap;
 var markers = [];
 var infoWindows = [];
-var selectedDino;
+var selectedDino = localStorage.getItem('selectedDino');
 var map = new google.maps.Map($('#map')[0], {
   center: {lat: 0, lng: 0},
   zoom: 2,
@@ -26,8 +26,6 @@ mapStyle.done(function(style){
 
 $(input).on('focus', function(){
   $(this).val('');
-  selectedDino = 0;
-  updateMarkers();
 });
 
 $(input).on('keyup', function(){
@@ -38,7 +36,6 @@ $(input).on('keyup', function(){
 });
 
 dinoGet.done(function(data) {
-  console.log(data);
   dinoData = data.records;
   formatHeatMap(dinoData);
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -50,6 +47,8 @@ dinoGet.done(function(data) {
   for (var i in dinoData){
     addMarker(dinoData, i);
   }
+  if (selectedDino)
+    setupDino();
   updateMarkers();
 });
 
@@ -124,11 +123,10 @@ function dinoMatch(inputText) {
     if(dinoResults[j])
       $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
   }
-  $('.dino-result').on('mousedown', function(event) {
+  $('.dino-result').on('mousedown', function() {
     selectedDino = this.innerText;
-    console.log(selectedDino);
-    $(input).val(selectedDino);
-    dinoSelect();
+    localStorage.setItem('selectedDino', selectedDino);
+    setupDino();
   });
 }
 
@@ -178,4 +176,33 @@ museumText +
 '</li></ul></div>';
 
   return infoString;
+}
+
+function indicateSelected(dinosaur) {
+  $('.selected-box').empty();
+  $('.selected-box').append('<div class="dino-indicator"><span class="remove">x</span> <img src="https://paleobiodb.org/data1.2/taxa/thumb.png?id=' + dinosaur.img + '"> <span class="dino-name">' + dinosaur.tna + '</span></div>');
+
+  $('.remove').on('mouseup', function(){
+    removeDino();
+  });
+}
+
+function setupDino() {
+  for (var i in dinoData)
+    if (selectedDino === dinoData[i].tna){
+      indicateSelected(dinoData[i]);
+      break;
+    }
+  $(input).val(selectedDino);
+  $('.selected-box').css('display', 'block');
+  dinoSelect();
+}
+
+function removeDino(){
+  $('.selected-box').css('display', 'none');
+  $('.selected-box').empty();
+  selectedDino = '';
+  localStorage.clear();
+  $(input).val('');
+  updateMarkers();
 }
