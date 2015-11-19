@@ -26,7 +26,7 @@ mapStyle.done(function(style){
 
 $(input).on('focus', function(){
   $(this).val('');
-  selectedDino = '';
+  selectedDino = 0;
   updateMarkers();
 });
 
@@ -102,12 +102,13 @@ function updateMarkers() {
 
 function checkBounds() {
     var newbounds = map.getBounds();
-    if(!selectedDino)
+    if(!selectedDino){
       for (var i in markers)
         if (newbounds.contains(markers[i].position))
           markers[i].setMap(map);
         else
           markers[i].setMap(null);
+    }
 }
 
 function dinoMatch(inputText) {
@@ -124,7 +125,8 @@ function dinoMatch(inputText) {
       $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
   }
   $('.dino-result').on('mousedown', function(event) {
-    selectedDino = event.target.innerText;
+    selectedDino = this.innerText;
+    console.log(selectedDino);
     $(input).val(selectedDino);
     dinoSelect();
   });
