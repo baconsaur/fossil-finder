@@ -2,7 +2,7 @@
   padding: 0;
   margin: 0; }
 
-html, body {
+html, body, main {
   height: 100%; }
 
 input {
@@ -61,3 +61,21 @@ input {
   .selected-box img {
     vertical-align: middle;
     width: 2em; }
+
+@media (max-width: 600px) {
+  input {
+    width: 100%; }
+  .selected-box {
+    width: 100%;
+    text-align: center;
+    top: 45px; }
+    .selected-box .remove {
+      font-size: 1.5em; }
+    .selected-box img {
+      vertical-align: bottom;
+      width: 2em; }
+  .dino-indicator {
+    display: inline-block;
+    margin: 0 20px; }
+  .dino-name {
+    display: none; } }
