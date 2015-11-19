@@ -5,8 +5,8 @@ var heatMapData = [];
 var dinoData;
 var heatMap;
 var markers = [];
+var selectedDino = [];
 var infoWindows = [];
-var selectedDino = localStorage.getItem('selectedDino');
 var map = new google.maps.Map($('#map')[0], {
   center: {lat: 0, lng: 0},
   zoom: 2,
@@ -19,6 +19,11 @@ var map = new google.maps.Map($('#map')[0], {
 
 var searchBox = new google.maps.places.SearchBox(input, {types: ['(regions)']});
 map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
+
+var dinoStorage = JSON.parse(localStorage.getItem('selectedDino'));
+if(dinoStorage)
+  for (var i in dinoStorage)
+    selectedDino.push(dinoStorage[i]);
 
 mapStyle.done(function(style){
   map.setOptions({styles: style});
@@ -48,7 +53,8 @@ dinoGet.done(function(data) {
     addMarker(dinoData, i);
   }
   if (selectedDino)
-    setupDino();
+    for (var j in selectedDino)
+      setupDino(j);
   updateMarkers();
 });
 
@@ -90,9 +96,10 @@ function addMarker(dinoData, i) {
 function updateMarkers() {
   if (!checkZoom()) {
       heatmap.setMap(map);
-      if(!selectedDino)
-        for (var i in markers)
-          markers[i].setMap(null);
+      for (var i in markers)
+        markers[i].setMap(null);
+      for (var j in selectedDino)
+        dinoSelect();
   } else {
     heatmap.setMap(null);
     checkBounds();
@@ -101,7 +108,7 @@ function updateMarkers() {
 
 function checkBounds() {
     var newbounds = map.getBounds();
-    if(!selectedDino){
+    if(selectedDino.length === 0){
       for (var i in markers)
         if (newbounds.contains(markers[i].position))
           markers[i].setMap(map);
@@ -124,26 +131,25 @@ function dinoMatch(inputText) {
       $('.pac-container').append('<div class="pac-item dino-result">' + dinoResults[j] + '</div>');
   }
   $('.dino-result').on('mousedown', function() {
-    selectedDino = this.innerText;
-    localStorage.setItem('selectedDino', selectedDino);
-    setupDino();
+    if (selectedDino.length < 3){
+      $(input).val('');
+      selectedDino.push(this.innerText);
+      localStorage.setItem('selectedDino', JSON.stringify(selectedDino));
+      setupDino(selectedDino.length - 1);
+    }
   });
 }
 
 function dinoSelect() {
-  var visibleMarker = false;
-  var bounds = map.getBounds();
   for (var i in dinoData) {
-    if(!selectedDino || dinoData[i].tna === selectedDino){
+    if(selectedDino.length === 0)
       markers[i].setMap(map);
-      if (bounds.contains(markers[i].position))
-        visibleMarker = true;
-    } else
+    else {
       markers[i].setMap(null);
-  }
-  if(!visibleMarker){
-    map.setZoom(2);
-    map.setCenter(new google.maps.LatLng(0,0));
+      for (var j in selectedDino)
+        if (dinoData[i].tna === selectedDino[j])
+          markers[i].setMap(map);
+    }
   }
 }
 
@@ -179,30 +185,31 @@ museumText +
 }
 
 function indicateSelected(dinosaur) {
-  $('.selected-box').empty();
   $('.selected-box').append('<div class="dino-indicator"><span class="remove">x</span> <img src="https://paleobiodb.org/data1.2/taxa/thumb.png?id=' + dinosaur.img + '"> <span class="dino-name">' + dinosaur.tna + '</span></div>');
-
-  $('.remove').on('mouseup', function(){
-    removeDino();
+  $('.dino-indicator:last-child>.remove').on('mouseup', function(){
+    removeDino($(this).parent()[0]);
   });
 }
 
-function setupDino() {
+function setupDino(j) {
   for (var i in dinoData)
-    if (selectedDino === dinoData[i].tna){
+    if (selectedDino[j] === dinoData[i].tna){
       indicateSelected(dinoData[i]);
       break;
     }
-  $(input).val(selectedDino);
   $('.selected-box').css('display', 'block');
   dinoSelect();
 }
 
-function removeDino(){
-  $('.selected-box').css('display', 'none');
-  $('.selected-box').empty();
-  selectedDino = '';
-  localStorage.clear();
+function removeDino(div){
+  var removeThis = div.innerText.substring(3,div.innerText.length);
+  $(div).remove();
+  selectedDino.splice(selectedDino.indexOf(removeThis), 1);
+  if (selectedDino.length === 0){
+    $('.selected-box').css('display', 'none');
+    localStorage.clear();
+  } else
+    localStorage.setItem('selectedDino', JSON.stringify(selectedDino));
   $(input).val('');
   updateMarkers();
 }
