@@ -55,6 +55,7 @@ dinoGet.done(function(data) {
   if (selectedDino)
     for (var j in selectedDino)
       setupDino(j);
+  $('.loading').css('display', 'none');
   updateMarkers();
 });
 
