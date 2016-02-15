@@ -1,3 +1,8 @@
+$('.instructions>button').click(function(event){
+  event.preventDefault();
+  $('.instructions').css('display', 'none');
+});
+
 var dinoGet = $.get('https://paleobiodb.org/data1.2/occs/list.json?base_name=Dinosauria&min_ma=66&taxon_reso=lump_genus&taxon_status=accepted&show=img,coords,class,ecospace,methods');
 var mapStyle = $.get('./mapstyles.json');
 var input = $('#search')[0];
